@@ -13,6 +13,7 @@ Group:      System/Libraries
 License:    GPLv2+
 URL:        http://www.cloog.org
 Source0:    %{name}-ppl-%{version}.tar.gz
+Source1001: packaging/cloog.manifest 
 BuildRequires:  ppl-devel >= 0.10.2
 BuildRequires:  gmp-devel >= 4.1.3
 BuildRequires:  libtool
@@ -55,6 +56,7 @@ The dynamic shared libraries of the Chunky Loop Generator
 # << setup
 
 %build
+cp %{SOURCE1001} .
 # >> build pre
 # << build pre
 
@@ -80,12 +82,14 @@ rm -rf %{buildroot}/%{_infodir}
 %postun ppl -p /sbin/ldconfig
 
 %files
+%manifest cloog.manifest
 %defattr(-,root,root,-)
 # >> files
 # << files
 
 
 %files ppl-devel
+%manifest cloog.manifest
 %defattr(-,root,root,-)
 # >> files ppl-devel
 %{_includedir}/cloog
@@ -93,6 +97,7 @@ rm -rf %{buildroot}/%{_infodir}
 # << files ppl-devel
 
 %files ppl
+%manifest cloog.manifest
 %defattr(-,root,root,-)
 # >> files ppl
 %{_bindir}/cloog
