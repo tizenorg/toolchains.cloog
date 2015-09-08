@@ -1,118 +1,103 @@
-#
-#   /**-------------------------------------------------------------------**
-#    **                              CLooG                                **
-#    **-------------------------------------------------------------------**
-#    **                           makefile.in                             **
-#    **-------------------------------------------------------------------**
-#    **                   First version: october 25th 2001                **
-#    **-------------------------------------------------------------------**/
-#
-# makefile.in (or makefile if generated) of CLooG, the Chunky LOOp Generator.
-# makefile.in is not a makefile, you must run the 'configure' shellscript to
-# generate the makefile thanks to this file.
+cloog_srcdir = @CLOOG_SRCDIR@
+cloog_builddir = @CLOOG_BUILDDIR@
 
-#/*****************************************************************************
-# *               CLooG : the Chunky Loop Generator (experimental)            *
-# *****************************************************************************
-# *                                                                           *
-# * Copyright (C) 2001 Cedric Bastoul                                         *
-# *                                                                           *
-# * This is free software; you can redistribute it and/or modify it under the *
-# * terms of the GNU General Public License as published by the Free Software *
-# * Foundation; either version 2 of the License, or (at your option) any      *
-# * later version.							      *
-# *                                                                           *
-# * This software is distributed in the hope that it will be useful, but      *
-# * WITHOUT ANY WARRANTY; without even the implied warranty of                *
-# * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General *
-# * Public License for more details.                                          *
-# *                                                                           *
-# * You should have received a copy of the GNU General Public License along   *
-# * with software; if not, write to the Free Software Foundation, Inc.,       *
-# * 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA                    *
-# *                                                                           *
-# * CLooG, the Chunky Loop Generator                                          *
-# * Written by Cedric Bastoul, Cedric.Bastoul@inria.fr                        *
-# *                                                                           *
-# *****************************************************************************/
+if BUNDLED_CLOOG
+    MAYBE_CLOOG = cloog-core
+endif
 
-SUBDIRS = . doc test
+SUBDIRS = . test
+DIST_SUBDIRS = $(MAYBE_CLOOG) . test
 
 ACLOCAL_AMFLAGS = -I m4
 
+FORCE:
+cloog-core/source/version.c: FORCE
+	cd cloog-core; $(MAKE) $(AM_MAKEFLAGS) source/version.c
+cloog-core/version.h: FORCE
+	cd cloog-core; $(MAKE) $(AM_MAKEFLAGS) version.h
+cloog-core/include/cloog/version.h: FORCE
+	cd cloog-core; $(MAKE) $(AM_MAKEFLAGS) include/cloog/version.h
+
 bin_PROGRAMS = cloog
-lib_LTLIBRARIES = libcloog.la
+lib_LTLIBRARIES = libcloog-ppl.la
 
+if NEED_GET_MEMORY_FUNCTIONS
+GET_MEMORY_FUNCTIONS=$(cloog_srcdir)/source/mp_get_memory_functions.c
+endif
+
+SOURCES_CORE = \
+	$(GET_MEMORY_FUNCTIONS) \
+	$(cloog_srcdir)/source/block.c \
+	$(cloog_srcdir)/source/clast.c \
+	$(cloog_srcdir)/source/matrix.c \
+	$(cloog_srcdir)/source/state.c \
+	$(cloog_srcdir)/source/input.c \
+	$(cloog_srcdir)/source/int.c \
+	$(cloog_srcdir)/source/loop.c \
+	$(cloog_srcdir)/source/names.c \
+	$(cloog_srcdir)/source/options.c \
+	$(cloog_srcdir)/source/pprint.c \
+	$(cloog_srcdir)/source/program.c \
+	$(cloog_srcdir)/source/statement.c \
+	$(cloog_srcdir)/source/stride.c \
+	$(cloog_srcdir)/source/union_domain.c \
+	$(cloog_srcdir)/source/matrix/constraintset.c \
+	$(cloog_builddir)/source/version.c \
+	$(cloog_builddir)/version.h
+
+DEFAULT_INCLUDES = -I.
 INCLUDES = -I$(top_builddir)/include -I$(top_srcdir)/include
-AM_CFLAGS = -Wall -fomit-frame-pointer
-libcloog_la_SOURCES = \
-	source/block.c \
-	source/loop.c \
-	source/names.c \
-	source/options.c \
-	source/@POLYHEDRAL_BACKEND@/clast.c \
-	source/@POLYHEDRAL_BACKEND@/domain.c \
-	source/@POLYHEDRAL_BACKEND@/matrix.c \
-	source/@POLYHEDRAL_BACKEND@/matrix.h \
-	source/pprint.c \
-	source/program.c \
-	source/statement.c \
-	source/version.c
-LDADD = libcloog.la
-cloog_SOURCES = source/cloog.c
+AM_CFLAGS = $(CFLAGS_WARN)
+libcloog_ppl_la_CPPFLAGS = @CLOOG_CPPFLAGS@ @PPL_CPPFLAGS@
+libcloog_ppl_la_LDFLAGS = -version-info @versioninfo@ \
+	-rpath $(libdir) @PPL_LDFLAGS@
+libcloog_ppl_la_LIBADD = @PPL_LIBS@
+nodist_libcloog_ppl_la_SOURCES = $(SOURCES_CORE)
+libcloog_ppl_la_SOURCES = \
+	source/domain.c \
+	source/backend.c
+LDADD = libcloog-ppl.la
+cloog_CPPFLAGS = @CLOOG_CPPFLAGS@
+cloog_DEPENDENCIES = libcloog-ppl.la
+nodist_cloog_SOURCES = $(cloog_srcdir)/source/cloog.c
 
-pkginclude_HEADERS = \
-	include/cloog/block.h \
-	include/cloog/clast.h \
-	include/cloog/cloog.h \
-	include/cloog/domain.h \
-	include/cloog/loop.h \
-	include/cloog/names.h \
-	include/cloog/options.h \
-	include/cloog/polylib_backend.h \
-	include/cloog/ppl_backend.h \
-	include/cloog/pprint.h \
-	include/cloog/program.h \
-	include/cloog/statement.h \
-	include/cloog/version.h \
-	include/cloog/cloog-config.h
+cloogincludedir = $(includedir)/cloog
+nodist_clooginclude_HEADERS = \
+	$(cloog_srcdir)/include/cloog/block.h \
+	$(cloog_srcdir)/include/cloog/clast.h \
+	$(cloog_srcdir)/include/cloog/cloog.h \
+	$(cloog_srcdir)/include/cloog/input.h \
+	$(cloog_srcdir)/include/cloog/int.h \
+	$(cloog_srcdir)/include/cloog/matrix.h \
+	$(cloog_srcdir)/include/cloog/state.h \
+	$(cloog_srcdir)/include/cloog/domain.h \
+	$(cloog_srcdir)/include/cloog/loop.h \
+	$(cloog_srcdir)/include/cloog/constraints.h \
+	$(cloog_srcdir)/include/cloog/names.h \
+	$(cloog_srcdir)/include/cloog/options.h \
+	$(cloog_srcdir)/include/cloog/pprint.h \
+	$(cloog_srcdir)/include/cloog/program.h \
+	$(cloog_srcdir)/include/cloog/statement.h \
+	$(cloog_srcdir)/include/cloog/stride.h \
+	$(cloog_srcdir)/include/cloog/union_domain.h \
+	$(cloog_builddir)/include/cloog/version.h
 
-version.h: @GIT_INDEX@
-	echo '#define CLOOG_HEAD "'`$(top_builddir)/genversion.sh`'"' > $@
+cloogmatrixincludedir = $(cloogincludedir)/matrix
+nodist_cloogmatrixinclude_HEADERS = \
+	$(cloog_srcdir)/include/cloog/matrix/constraintset.h
 
-EXTRA_DIST = autoconf/Doxyfile.in doc/images test
-
-dist-hook:
-	rm -f $(distdir)/test/Makefile
-	$(top_builddir)/genversion.sh > $(distdir)/CLOOG_HEAD
-	(cd doc; make cloog.pdf) && cp doc/cloog.pdf $(distdir)/doc/
-
-#/*****************************************************************************
-# *                                   Rules                                   *
-# *****************************************************************************/
+cloogpplincludedir = $(cloogincludedir)/ppl
+cloogpplinclude_HEADERS = \
+	include/cloog/ppl/backend.h \
+	include/cloog/ppl/cloog.h \
+	include/cloog/ppl/domain.h
 
 check:
 	$(MAKE) test -C test
 
-valcheck:
-	$(MAKE) valgrind -C test
+install-data-local:
+	@test -z "$(pkgconfig_libdir)" || $(mkdir_p) "$(DESTDIR)$(pkgconfig_libdir)"
+	$(INSTALL_DATA) $(pkgconfig_libfile) "$(DESTDIR)$(pkgconfig_libdir)/$(pkgconfig_libfile)"
 
-total:
-	@echo "             /*-----------------------------------------------*"
-	@echo "              *                     CLooG                     *"
-	@echo "              *-----------------------------------------------*/"
-	$(MAKE) uninstall
-	$(MAKE) clean
-	$(MAKE)
-	$(MAKE) install
-
-doc:
-	@echo "             /*-----------------------------------------------*"
-	@echo "              *        Generating CLooG's documentation       *"
-	@echo "              *-----------------------------------------------*/"
-	doxygen ./autoconf/Doxyfile
-
-clean-local:
-	rm $(top_builddir)/version.h
-	rm $(top_builddir)/doc/gitversion.texi
-
+uninstall-local:
+	rm -f "$(DESTDIR)$(pkgconfig_libdir)/$(pkgconfig_libfile)"

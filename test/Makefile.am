@@ -4,10 +4,6 @@
 #    **-------------------------------------------------------------------**
 #    **                            makefile                               **
 #    **-------------------------------------------------------------------**
-#    **                   First version: march 6th 2003                   **
-#    **-------------------------------------------------------------------**/
-#
-# makefile for checking.
 
 #/*****************************************************************************
 # *               CLooG : the Chunky Loop Generator (experimental)            *
@@ -15,19 +11,20 @@
 # *                                                                           *
 # * Copyright (C) 2003 Cedric Bastoul                                         *
 # *                                                                           *
-# * This is free software; you can redistribute it and/or modify it under the *
-# * terms of the GNU General Public License as published by the Free Software *
-# * Foundation; either version 2 of the License, or (at your option) any      *
-# * later version.							      *
+# * This library is free software; you can redistribute it and/or             *
+# * modify it under the terms of the GNU Lesser General Public                *
+# * License as published by the Free Software Foundation; either              *
+# * version 2.1 of the License, or (at your option) any later version.        *
 # *                                                                           *
-# * This software is distributed in the hope that it will be useful, but      *
-# * WITHOUT ANY WARRANTY; without even the implied warranty of                *
-# * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General *
-# * Public License for more details.                                          *
+# * This library is distributed in the hope that it will be useful,           *
+# * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+# * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU         *
+# * Lesser General Public License for more details.                           *
 # *                                                                           *
-# * You should have received a copy of the GNU General Public License along   *
-# * with software; if not, write to the Free Software Foundation, Inc.,       *
-# * 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA                    *
+# * You should have received a copy of the GNU Lesser General Public          *
+# * License along with this library; if not, write to the Free Software       *
+# * Foundation, Inc., 51 Franklin Street, Fifth Floor,                        *
+# * Boston, MA  02110-1301  USA                                               *
 # *                                                                           *
 # * CLooG, the Chunky Loop Generator                                          *
 # * Written by Cedric Bastoul, Cedric.Bastoul@inria.fr                        *
@@ -36,9 +33,24 @@
 # *                                                                           *
 # *****************************************************************************/
 
+cloog_srcdir = @CLOOG_SRCDIR@
+
+noinst_PROGRAMS = generate_test
+INCLUDES = -I$(top_builddir)/include -I$(top_srcdir)/include
+LDADD = ../libcloog-ppl.la
+generate_test_CPPFLAGS = @CLOOG_CPPFLAGS@
+nodist_generate_test_SOURCES = $(cloog_srcdir)/test/generate_test.c
+
+FORCE:
+../libcloog-ppl.la: FORCE
+	cd ..; $(MAKE) $(AM_MAKEFLAGS) libcloog-ppl.la
+
 ROOT = ..
 
-CLOOGTEST_C =                          \
+FINITE_CLOOGTEST_C =                   \
+	0D-1                           \
+	0D-2                           \
+	0D-3                           \
 	1point-1                       \
 	1point-2                       \
 	4-param                        \
@@ -48,10 +60,12 @@ CLOOGTEST_C =                          \
 	basic-bounds-4                 \
 	basic-bounds-5                 \
 	basic-bounds-6                 \
+	block                          \
 	byu98-1-2-3                    \
 	cholesky                       \
 	cholesky2                      \
 	classen                        \
+	constbound                     \
 	darte                          \
 	donotsimp                      \
 	dot                            \
@@ -71,12 +85,9 @@ CLOOGTEST_C =                          \
 	guide                          \
 	iftest                         \
 	iftest2                        \
-	infinite                       \
-	infinite2                      \
-	infinite3                      \
-	infinite4                      \
 	largeur                        \
 	levenshtein-1-2-3              \
+	lex                            \
 	lineality-1-2                  \
 	lineality-2-1-2                \
 	logo                           \
@@ -92,17 +103,20 @@ CLOOGTEST_C =                          \
 	mode                           \
 	multi-mm-1                     \
 	no_lindep                      \
-	not_equal		       \
 	orc                            \
 	rectangle                      \
+	singleton                      \
 	square+triangle-1-1-2-3        \
 	swim                           \
 	test                           \
 	thomasset                      \
 	tiling                         \
 	uday_scalars		       \
+	union			       \
 	vivien                         \
 	vivien2                        \
+	walters                        \
+	walters2                       \
 	wavefront                      \
 	yosr                           \
 	yosr2                          \
@@ -139,6 +153,13 @@ CLOOGTEST_C =                          \
 	./reservoir/tang-xue1          \
 	./reservoir/two   
 
+CLOOGTEST_C =                          \
+	infinite                       \
+	infinite2                      \
+	infinite3                      \
+	infinite4                      \
+	$(FINITE_CLOOGTEST_C)
+
 #	./reservoir/long               \
 #	faber
 
@@ -149,6 +170,8 @@ CLOOGTEST_FORTRAN =                    \
 	yosrf
 
 CLOOGTEST_STRIDED =                    \
+	basic-bounds-2                 \
+	mod4                           \
 	nul_basic1                     \
 	nul_basic2                     \
 	nul_lcpc		       \
@@ -158,18 +181,53 @@ CLOOGTEST_STRIDED =                    \
 	reservoir/stride	       \
 	reservoir/stride2
 
+SPECIAL_TESTS = \
+	vasilache \
+	merge \
+	equality \
+	equality2 \
+	param-split \
+	stride \
+	stride2 \
+	sor1d
+SPECIAL_OPTIONS = \
+	'vasilache -f 8 -l 9' \
+	'merge -f -1' \
+	'equality -f -1 -l 2 -override' \
+	'equality2 -f -1 -l 4 -esp 1 -override' \
+	'param-split -f -1' \
+	'stride -f -1 -strides 1' \
+	'stride2 -f -1 -strides 1' \
+	'sor1d -f -1'
+
+EXTRA_DIST = \
+	$(CLOOGTEST_C:%=%.c) \
+	$(CLOOGTEST_FORTRAN:%=%.f) \
+	$(CLOOGTEST_STRIDED:%=%.c) \
+	$(SPECIAL_TESTS:%=%.c)
+
 generate:
 	@echo "             /*-----------------------------------------------*"
 	@echo "              *                 Generate files                *"
 	@echo "              *-----------------------------------------------*/"
-	for x in $(CLOOGTEST_C) ; do \
+	@for x in $(CLOOGTEST_C) ; do \
 		echo "Generate $$x.c" ; \
-		cloog $$x.cloog -o $$x.c ; \
+		$(top_builddir)/cloog $(cloog_srcdir)/test/$$x.cloog -o $(srcdir)/$$x.c ; \
 	done ; \
 	for x in $(CLOOGTEST_FORTRAN) ; do \
 		echo "Generate $$x.f" ; \
-		cloog $$x.cloog -o $$x.f ; \
-	done
+		$(top_builddir)/cloog $(cloog_srcdir)/test/$$x.cloog -o $(srcdir)/$$x.f ; \
+	done ; \
+	for x in $(CLOOGTEST_STRIDED) ; do \
+		echo "Generate $$x.c" ; \
+		$(top_builddir)/cloog $(cloog_srcdir)/test/$$x.cloog \
+			-strides 1 -o $(srcdir)/$$x.c ; \
+	done ; \
+	for line in $(SPECIAL_OPTIONS); do echo $$line | while read x options; do \
+		echo "Generate file $$x ($$options)" ; \
+		$(top_builddir)/cloog$(EXEEXT) $(cloog_srcdir)/test/$$x.cloog \
+		    $$options > $(srcdir)/$$x.c ; \
+	done; done
 
 valgrind:
 	@echo "             /*-----------------------------------------------*"
@@ -177,23 +235,88 @@ valgrind:
 	@echo "              *-----------------------------------------------*/"
 	for x in $(CLOOGTEST_C) ; do \
 		echo "Valgrinding $$x.c" ; \
-		valgrind $(top_builddir)/cloog$(EXEEXT) $(srcdir)/$$x.cloog ; \
+		valgrind $(top_builddir)/cloog$(EXEEXT) $(cloog_srcdir)/test/$$x.cloog ; \
 	done ; \
 	for x in $(CLOOGTEST_FORTRAN) ; do \
 		echo "Valgrinding $$x.f" ; \
-		valgrind $(top_builddir)/cloog$(EXEEXT) $(srcdir)/$$x.cloog ; \
+		valgrind $(top_builddir)/cloog$(EXEEXT) $(cloog_srcdir)/test/$$x.cloog ; \
 	done
 
+test_run: generate_test$(EXEEXT)
+	@echo "             /*-----------------------------------------------*"
+	@echo "              *                 Testing CLooG                 *"
+	@echo "              *-----------------------------------------------*/"
+	@failedtest=0 ; \
+	echo "--- Testing C files... (correct output)" ; \
+	for x in $(FINITE_CLOOGTEST_C) ; do \
+		echo -n "Verify file $$x... " ; \
+		echo -n "generating... " ; \
+		$(top_builddir)/cloog$(EXEEXT) -q -callable 1 $(cloog_srcdir)/test/$$x.cloog > test_test.c ; \
+		./generate_test$(EXEEXT) < $(cloog_srcdir)/test/$$x.cloog > test_main.c; \
+		echo -n "compiling... " ; \
+		$(COMPILE) -c test_test.c; \
+		$(COMPILE) -Dtest=good -c $(cloog_srcdir)/test/$$x.good.c -o test_good.o; \
+		$(LINK) test_main.c test_test.o test_good.o > /dev/null; \
+		echo -n "comparing... " ; \
+		./test_run$(EXEEXT); \
+		result=$$?; \
+		if test "$$result" -ne "0" ; then \
+			failedtest=`expr $$failedtest + 1` ; \
+		fi; \
+		$(RM) $@; \
+		echo; \
+	done; \
+	for line in $(SPECIAL_OPTIONS); do echo $$line | while read x options; do \
+		echo -n "Verify file $$x ($$options)... " ; \
+		echo -n "generating... " ; \
+		$(top_builddir)/cloog$(EXEEXT) -q -callable 1 $$options $(cloog_srcdir)/test/$$x.cloog > test_test.c ; \
+		./generate_test$(EXEEXT) < $(cloog_srcdir)/test/$$x.cloog > test_main.c; \
+		echo -n "compiling... " ; \
+		$(COMPILE) -c test_test.c; \
+		$(COMPILE) -Dtest=good -c $(cloog_srcdir)/test/$$x.good.c -o test_good.o; \
+		$(LINK) test_main.c test_test.o test_good.o > /dev/null; \
+		echo -n "comparing... " ; \
+		./test_run$(EXEEXT); \
+		result=$$?; \
+		if test "$$result" -ne "0" ; then \
+			failedtest=`expr $$failedtest + 1` ; \
+		fi; \
+		$(RM) $@; \
+		echo; \
+	done; done; \
+	for line in $(SPECIAL_OPTIONS); do echo $$line | while read x options; do \
+		echo -n "Verify file $$x ($$options -sh 1)... " ; \
+		echo -n "generating... " ; \
+		$(top_builddir)/cloog$(EXEEXT) -q -callable 1 $$options -sh 1 $(cloog_srcdir)/test/$$x.cloog > test_test.c ; \
+		./generate_test$(EXEEXT) < $(cloog_srcdir)/test/$$x.cloog > test_main.c; \
+		echo -n "compiling... " ; \
+		$(COMPILE) -c test_test.c; \
+		$(COMPILE) -Dtest=good -c $(cloog_srcdir)/test/$$x.good.c -o test_good.o; \
+		$(LINK) test_main.c test_test.o test_good.o > /dev/null; \
+		echo -n "comparing... " ; \
+		./test_run$(EXEEXT); \
+		result=$$?; \
+		if test "$$result" -ne "0" ; then \
+			failedtest=`expr $$failedtest + 1` ; \
+		fi; \
+		$(RM) $@; \
+		echo; \
+	done; done; \
+	if [ $$failedtest != 0 ] ; then \
+		echo "$$failedtest tests failed" ; \
+	else \
+	        echo "CLooG works correctly :-) !" ; \
+        fi
 test:
 	@echo "             /*-----------------------------------------------*"
 	@echo "              *                 Testing CLooG                 *"
 	@echo "              *-----------------------------------------------*/"
-	failedtest=0 ; \
-	echo "--- Testing C files..." ; \
+	@failedtest=0 ; \
+	echo "--- Testing C files... (expected output)" ; \
 	for x in $(CLOOGTEST_C) ; do \
 		echo "Verify file $$x" ; \
-		$(top_builddir)/cloog$(EXEEXT) $(srcdir)/$$x.cloog > ttemp ; \
-		diff -w --ignore-matching-lines='CLooG' ttemp $(srcdir)/$$x.c.@POLYHEDRAL_BACKEND@ ; \
+		$(top_builddir)/cloog$(EXEEXT) $(cloog_srcdir)/test/$$x.cloog > ttemp ; \
+		diff -u -w --ignore-matching-lines='CLooG' ttemp $(srcdir)/$$x.c ; \
 		result=$$?; \
 		if [ "$$result" -ne "0" ] ; then \
 			echo "!!! Error: $$x is not the same" ; \
@@ -205,8 +328,8 @@ test:
 	echo "--- Testing FORTRAN files..." ; \
 	for x in $(CLOOGTEST_FORTRAN) ; do \
 		echo "Verify file $$x" ; \
-		$(top_builddir)/cloog$(EXEEXT) $(srcdir)/$$x.cloog > ttemp ; \
-		diff -w --ignore-matching-lines='CLooG' ttemp $(srcdir)/$$x.f.@POLYHEDRAL_BACKEND@ ; \
+		$(top_builddir)/cloog$(EXEEXT) $(cloog_srcdir)/test/$$x.cloog > ttemp ; \
+		diff -u -w --ignore-matching-lines='CLooG' ttemp $(srcdir)/$$x.f ; \
 		result=$$?; \
 		if [ "$$result" -ne "0" ] ; then \
 			echo "!!! Error: $$x is not the same" ; \
@@ -218,9 +341,9 @@ test:
 	echo "--- Testing STRIDED files..." ; \
 	for x in $(CLOOGTEST_STRIDED) ; do \
 		echo "Verify file $$x" ; \
-		$(top_builddir)/cloog$(EXEEXT) $(srcdir)/$$x.cloog \
+		$(top_builddir)/cloog$(EXEEXT) $(cloog_srcdir)/test/$$x.cloog \
 		-strides 1 > ttemp ; \
-		diff -w --ignore-matching-lines='CLooG' ttemp $(srcdir)/$$x.c.@POLYHEDRAL_BACKEND@ ; \
+		diff -u -w --ignore-matching-lines='CLooG' ttemp $(srcdir)/$$x.c ; \
 		result=$$?; \
 		if [ "$$result" -ne "0" ] ; then \
 			echo "!!! Error: $$x is not the same" ; \
@@ -230,11 +353,11 @@ test:
 	        fi ; \
 	done ; \
 	echo "--- Testing SPECIAL OPTIONS files..." ; \
-	        echo "Verify file vasilache (-f 8 -l 9)" ; \
-		x=vasilache ; \
-		$(top_builddir)/cloog$(EXEEXT) $(srcdir)/$$x.cloog \
-		-f 8 -l 9 > ttemp ; \
-		diff -w --ignore-matching-lines='CLooG' ttemp $(srcdir)/$$x.c.@POLYHEDRAL_BACKEND@ ; \
+	for line in $(SPECIAL_OPTIONS); do echo $$line | while read x options; do \
+	        echo "Verify file $$x ($$options)" ; \
+		$(top_builddir)/cloog$(EXEEXT) $(cloog_srcdir)/test/$$x.cloog \
+			$$options > ttemp ; \
+		diff -u -w --ignore-matching-lines='CLooG' ttemp $(srcdir)/$$x.c ; \
 		result=$$?; \
 		if [ "$$result" -ne "0" ] ; then \
 			echo "!!! Error: $$x is not the same" ; \
@@ -242,42 +365,7 @@ test:
 		else \
 			echo "$$x passed" ; \
 	        fi ; \
-	        echo "Verify file merge (-f -1)" ; \
-		x=merge ; \
-		$(top_builddir)/cloog$(EXEEXT) $(srcdir)/$$x.cloog \
-		-f -1  > ttemp ; \
-		diff -w --ignore-matching-lines='CLooG' ttemp $(srcdir)/$$x.c.@POLYHEDRAL_BACKEND@ ; \
-		result=$$?; \
-		if [ "$$result" -ne "0" ] ; then \
-			echo "!!! Error: $$x is not the same" ; \
-			failedtest=`expr $$failedtest + 1` ; \
-		else \
-			echo "$$x passed" ; \
-	        fi ; \
-	        echo "Verify file equality (-f -1 -l 2 -override)" ; \
-		x=equality ; \
-		$(top_builddir)/cloog$(EXEEXT) $(srcdir)/$$x.cloog \
-		-f -1 -l 2 -override  > ttemp ; \
-		diff -w --ignore-matching-lines='CLooG' ttemp $(srcdir)/$$x.c.@POLYHEDRAL_BACKEND@ ; \
-		result=$$?; \
-		if [ "$$result" -ne "0" ] ; then \
-			echo "!!! Error: $$x is not the same" ; \
-			failedtest=`expr $$failedtest + 1` ; \
-		else \
-			echo "$$x passed" ; \
-	        fi ; \
-	        echo "Verify file equality (-f -1 -l 4 -esp 1 -override)" ; \
-		x=equality2; \
-		$(top_builddir)/cloog$(EXEEXT) $(srcdir)/$$x.cloog \
-		-f -1 -l 4 -esp 1 -override > ttemp ; \
-		diff -w --ignore-matching-lines='CLooG' ttemp $(srcdir)/$$x.c.@POLYHEDRAL_BACKEND@ ; \
-		result=$$?; \
-		if [ "$$result" -ne "0" ] ; then \
-			echo "!!! Error: $$x is not the same" ; \
-			failedtest=`expr $$failedtest + 1` ; \
-		else \
-			echo "$$x passed" ; \
-	        fi ; \
+	done; done; \
 	rm ttemp ; \
 	if [ $$failedtest != 0 ] ; then \
 		echo "$$failedtest tests failed" ; \
